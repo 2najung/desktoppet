@@ -8,6 +8,7 @@ class FirebaseSync {
     weak var petManager: PetManager?
     weak var todoStore: TodoStore?
     weak var ddayStore: DDayStore?
+    private var processedCommands: Set<String> = []
 
     func startSync() {
         // 1초마다 상태 푸시
@@ -93,10 +94,15 @@ class FirebaseSync {
 
             DispatchQueue.main.async {
                 for (key, cmd) in commands {
+                    guard !self.processedCommands.contains(key) else { continue }
+                    self.processedCommands.insert(key)
                     self.executeCommand(cmd)
                     self.deleteJSON(path: "commands/\(key)")
                 }
-                // 명령 처리 후 즉시 상태 푸시
+                // 오래된 처리 기록 정리 (100개 넘으면)
+                if self.processedCommands.count > 100 {
+                    self.processedCommands.removeAll()
+                }
                 self.pushAll()
             }
         }.resume()
