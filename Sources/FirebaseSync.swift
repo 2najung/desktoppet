@@ -10,16 +10,16 @@ class FirebaseSync {
     weak var ddayStore: DDayStore?
 
     func startSync() {
-        // 10초마다 상태 푸시
-        pushTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+        // 1초마다 상태 푸시
+        pushTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.pushAll()
         }
-        // 15초마다 웹에서 추가한 할일/D-Day 가져오기
-        pullTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+        // 0.5초마다 웹 명령 체크
+        pullTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.pullCommands()
         }
         // 초기 푸시
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.pushAll()
         }
     }
@@ -92,9 +92,10 @@ class FirebaseSync {
             DispatchQueue.main.async {
                 for (key, cmd) in commands {
                     self.executeCommand(cmd)
-                    // 처리한 명령 삭제
                     self.deleteJSON(path: "commands/\(key)")
                 }
+                // 명령 처리 후 즉시 상태 푸시
+                self.pushAll()
             }
         }.resume()
     }
