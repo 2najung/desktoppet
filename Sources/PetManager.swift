@@ -145,6 +145,9 @@ class PetManager: ObservableObject {
     }
 
     private func tick() {
+        // 리마인더는 항상 체크 (자는 중에도)
+        checkReminders()
+
         if isSleeping {
             energy = min(100, energy + 3)
             if energy >= 100 {
@@ -158,7 +161,6 @@ class PetManager: ObservableObject {
         cleanliness = max(0, cleanliness - 0.2)
         lastUpdateTime = Date()
         checkTimeEvents()
-        checkReminders()
     }
 
     private func checkReminders() {

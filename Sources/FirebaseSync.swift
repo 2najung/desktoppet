@@ -147,10 +147,21 @@ class FirebaseSync {
     private func pullReminders() {
         guard let url = URL(string: "\(baseURL)/reminders.json") else { return }
         URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data, let dict = try? JSONSerialization.jsonObject(with: data) as? [String: [String: String]] else { return }
-            let reminders = dict.map { $0.value }
+            guard let self, let data else { return }
+            // null 체크
+            if let str = String(data: data, encoding: .utf8), str == "null" {
+                DispatchQueue.main.async { self.petManager?.reminders = [] }
+                return
+            }
+            guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+            var reminders: [[String: String]] = []
+            for (_, value) in dict {
+                if let r = value as? [String: String] {
+                    reminders.append(r)
+                }
+            }
             DispatchQueue.main.async {
-                self?.petManager?.reminders = reminders
+                self.petManager?.reminders = reminders
             }
         }.resume()
     }
