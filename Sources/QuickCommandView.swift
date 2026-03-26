@@ -172,6 +172,14 @@ struct QuickCommandView: View {
             }
         }
 
+        // 리마인더
+        cleaned = ActionExecutor.extractAndRemoveTags(cleaned, pattern: "\\[TIMER:(.+?)\\]") { content in
+            let parts = content.split(separator: "|", maxSplits: 1)
+            if parts.count == 2 {
+                ActionExecutor.addReminder(timeStr: String(parts[0]), message: String(parts[1]), petManager: petManager)
+            }
+        }
+
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
