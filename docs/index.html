@@ -18,7 +18,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 
 .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
 .pet-card{text-align:center;padding:24px 16px;background:var(--pet-bg);position:relative}
-.pet-emoji{font-size:80px;animation:float 3s ease-in-out infinite}
+.pet-img{width:140px;height:140px;object-fit:contain;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.12))}
+.pet-emoji{font-size:80px;animation:float 3s ease-in-out infinite;display:none}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .pet-name{font-size:20px;font-weight:800;margin-top:12px}
 .pet-mood{font-size:12px;color:var(--sub);margin-top:4px;padding:4px 12px;background:var(--track);border-radius:20px;display:inline-block}
@@ -93,6 +94,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 <div class="page active" id="pageHome">
   <div class="card pet-card">
     <div id="ddayBadgesHome" class="dday-badges"></div>
+    <img class="pet-img" id="petImg" src="img/default.png" onerror="this.style.display='none';document.getElementById('petEmoji').style.display='block'" />
     <div class="pet-emoji" id="petEmoji">🥔</div>
     <div class="pet-name" id="petName">로딩 중...</div>
     <div class="pet-mood" id="petMood"></div>
@@ -274,6 +276,10 @@ db.ref('pet').on('value', snap => {
   const d = snap.val();
   if (!d) { document.getElementById('offlineBadge').classList.add('show'); return; }
   document.getElementById('offlineBadge').classList.remove('show');
+  const img = document.getElementById('petImg');
+  img.src = 'img/' + (d.mood||'default') + '.png';
+  img.style.display = 'block';
+  img.onerror = function(){ this.style.display='none'; document.getElementById('petEmoji').style.display='block'; };
   document.getElementById('petEmoji').textContent = d.emoji || '🥔';
   document.getElementById('petName').textContent = d.name || '펫';
   document.getElementById('petMood').textContent = (d.emoji||'') + ' ' + (d.label||'');
