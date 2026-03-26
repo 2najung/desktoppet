@@ -147,6 +147,50 @@ enum ActionExecutor {
         return memories.count < before
     }
 
+    // MARK: - 리마인더
+
+    static func addReminder(timeStr: String, message: String, petManager: PetManager?) {
+        let now = Date()
+        var targetDate: Date?
+
+        // "5m", "10m", "1h" 같은 상대 시간
+        if timeStr.hasSuffix("m"), let mins = Int(timeStr.dropLast()) {
+            targetDate = now.addingTimeInterval(Double(mins) * 60)
+        } else if timeStr.hasSuffix("h"), let hrs = Int(timeStr.dropLast()) {
+            targetDate = now.addingTimeInterval(Double(hrs) * 3600)
+        }
+        // "15:00", "3:30" 같은 시간
+        else if timeStr.contains(":") {
+            let parts = timeStr.split(separator: ":")
+            if parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) {
+                let cal = Calendar.current
+                var comps = cal.dateComponents([.year, .month, .day], from: now)
+                comps.hour = h; comps.minute = m; comps.second = 0
+                if let d = cal.date(from: comps) {
+                    targetDate = d < now ? cal.date(byAdding: .day, value: 1, to: d) : d
+                }
+            }
+        }
+
+        guard let target = targetDate else { return }
+
+        let id = UUID().uuidString
+        let f = ISO8601DateFormatter()
+        let reminder = ["id": id, "message": message, "time": f.string(from: target)]
+
+        // 로컬 저장
+        petManager?.reminders.append(reminder)
+
+        // Firebase 저장
+        guard let url = URL(string: "https://desktoppet-ba9ae-default-rtdb.firebaseio.com/reminders/\(id).json"),
+              let body = try? JSONSerialization.data(withJSONObject: reminder) else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PUT"
+        req.httpBody = body
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        URLSession.shared.dataTask(with: req).resume()
+    }
+
     // MARK: - 태그 파싱 헬퍼
 
     static func extractAndRemoveTags(_ text: String, pattern: String, action: (String) -> Void) -> String {

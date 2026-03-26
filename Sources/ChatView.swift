@@ -318,6 +318,15 @@ struct ChatView: View {
             ActionExecutor.deleteMemory(keyword)
         }
 
+        // 리마인더: [TIMER:5m:메시지] 또는 [TIMER:15:00:메시지]
+        cleaned = ActionExecutor.extractAndRemoveTags(cleaned, pattern: "\\[TIMER:([^:]+):([^\\]]+)\\]") { match in
+            // match = "5m:물 마시기" 또는 "15:00:회의"
+            let parts = match.split(separator: ":", maxSplits: 1)
+            if parts.count == 2 {
+                ActionExecutor.addReminder(timeStr: String(parts[0]), message: String(parts[1]), petManager: petManager)
+            }
+        }
+
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -367,9 +376,16 @@ struct ChatView: View {
         [WEBSEARCH:검색어] → 웹 검색 (모르는 것, 최신 정보 질문에 사용)
 
         기억:
-        [REMEMBER:내용] → 기억 저장 (사용자가 "기억해", "저장해" 요청 시)
-        [RECALL:키워드] → 기억 찾기 (사용자가 "뭐였더라", "기억나?" 요청 시)
+        [REMEMBER:내용] → 기억 저장
+        [RECALL:키워드] → 기억 찾기
         [FORGET:키워드] → 기억 삭제
+
+        리마인더:
+        [TIMER:5m:물 마시기] → 5분 후 알림
+        [TIMER:30m:회의 준비] → 30분 후 알림
+        [TIMER:1h:점심] → 1시간 후 알림
+        [TIMER:15:00:회의 시작] → 15시에 알림
+        [TIMER:9:30:출근] → 9시 30분에 알림
 
         \(memoryContext)
 

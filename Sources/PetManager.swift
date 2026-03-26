@@ -18,6 +18,7 @@ class PetManager: ObservableObject {
     @Published var timeMessage: String? = nil
     @Published var walkState: String = "idle"  // idle, walking, sitting
     @Published var walkDirection: CGFloat = 1  // 1=오른쪽, -1=왼쪽
+    @Published var reminders: [[String: String]] = []  // [{id, message, time}]
     @Published var clipboardSuggestion: String? = nil
     @Published var clipboardText: String? = nil
     @Published var clipboardType: String = ""  // translate, summarize, url
@@ -157,6 +158,39 @@ class PetManager: ObservableObject {
         cleanliness = max(0, cleanliness - 0.2)
         lastUpdateTime = Date()
         checkTimeEvents()
+        checkReminders()
+    }
+
+    private func checkReminders() {
+        let now = Date()
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter()
+        var fired: [String] = []
+
+        for reminder in reminders {
+            guard let id = reminder["id"],
+                  let timeStr = reminder["time"],
+                  let msg = reminder["message"] else { continue }
+            let targetDate = f.date(from: timeStr) ?? f2.date(from: timeStr)
+            guard let target = targetDate else { continue }
+            if now >= target {
+                showTimeMessage("⏰ \(msg)")
+                NSSound.beep()
+                fired.append(id)
+            }
+        }
+
+        if !fired.isEmpty {
+            reminders.removeAll { r in fired.contains(r["id"] ?? "") }
+            // Firebase에서도 삭제
+            for id in fired {
+                let url = URL(string: "https://desktoppet-ba9ae-default-rtdb.firebaseio.com/reminders/\(id).json")!
+                var req = URLRequest(url: url)
+                req.httpMethod = "DELETE"
+                URLSession.shared.dataTask(with: req).resume()
+            }
+        }
     }
 
     func completedPomodoro() {

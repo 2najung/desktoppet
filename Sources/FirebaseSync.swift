@@ -31,6 +31,7 @@ class FirebaseSync {
         pushTodos()
         pushDDays()
         pushMemories()
+        pullReminders()
     }
 
     private func pushPetState() {
@@ -139,6 +140,19 @@ class FirebaseSync {
         case "wake": petManager?.wake()
         default: break
         }
+    }
+
+    // MARK: - 리마인더 동기화
+
+    private func pullReminders() {
+        guard let url = URL(string: "\(baseURL)/reminders.json") else { return }
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let data, let dict = try? JSONSerialization.jsonObject(with: data) as? [String: [String: String]] else { return }
+            let reminders = dict.map { $0.value }
+            DispatchQueue.main.async {
+                self?.petManager?.reminders = reminders
+            }
+        }.resume()
     }
 
     // MARK: - HTTP Helpers
