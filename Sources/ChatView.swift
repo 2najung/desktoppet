@@ -319,6 +319,21 @@ struct ChatView: View {
             ActionExecutor.deleteMemory(keyword)
         }
 
+        // 캘린더 일정 추가: [CALENDAR:2026-03-27T15:00|회의]
+        cleaned = ActionExecutor.extractAndRemoveTags(cleaned, pattern: "\\[CALENDAR:(.+?)\\]") { content in
+            let parts = content.split(separator: "|", maxSplits: 1)
+            if parts.count == 2 {
+                let f = ISO8601DateFormatter()
+                let f2 = DateFormatter()
+                f2.dateFormat = "yyyy-MM-dd'T'HH:mm"
+                let dateStr = String(parts[0])
+                let title = String(parts[1])
+                if let date = f.date(from: dateStr) ?? f2.date(from: dateStr) {
+                    petManager.calendarService.addEvent(title: title, startDate: date, endDate: nil)
+                }
+            }
+        }
+
         // 리마인더: [TIMER:5m|메시지] 또는 [TIMER:15:00|메시지]
         cleaned = ActionExecutor.extractAndRemoveTags(cleaned, pattern: "\\[TIMER:(.+?)\\]") { content in
             let parts = content.split(separator: "|", maxSplits: 1)
@@ -340,6 +355,7 @@ struct ChatView: View {
         let todoContext = pendingTodos.isEmpty ? "현재 할 일 없음" : "현재 할 일 목록:\n\(pendingTodos)"
         let memories = ActionExecutor.loadMemories()
         let memoryContext = memories.isEmpty ? "저장된 기억 없음" : "저장된 기억:\n\(memories.suffix(10).map { "- \($0)" }.joined(separator: "\n"))"
+        let calendarContext = petManager.calendarService.todaySummary
 
         return """
         너는 '\(petManager.name)'이라는 이름의 똑똑한 AI 비서야.
@@ -349,6 +365,8 @@ struct ChatView: View {
         현재 시간: \(now)
 
         \(todoContext)
+
+        \(calendarContext)
 
         역할:
         - 일정 관리, 할 일 정리, 앱/웹 열기, 시스템 제어
@@ -379,6 +397,10 @@ struct ChatView: View {
         [REMEMBER:내용] → 기억 저장
         [RECALL:키워드] → 기억 찾기
         [FORGET:키워드] → 기억 삭제
+
+        캘린더:
+        [CALENDAR:2026-03-27T15:00|회의 제목] → 캘린더에 일정 추가
+        날짜는 반드시 yyyy-MM-ddTHH:mm 형식. 예: [CALENDAR:2026-03-27T14:00|팀 미팅]
 
         리마인더 (반드시 이 형식으로!):
         "~뒤에 알려줘", "~시에 알려줘" 요청 시 반드시 [TIMER:] 태그 사용

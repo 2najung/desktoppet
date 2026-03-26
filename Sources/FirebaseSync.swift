@@ -31,6 +31,7 @@ class FirebaseSync {
         pushTodos()
         pushDDays()
         pushMemories()
+        pushCalendar()
         pullReminders()
     }
 
@@ -140,6 +141,19 @@ class FirebaseSync {
         case "wake": petManager?.wake()
         default: break
         }
+    }
+
+    // MARK: - 캘린더 동기화
+
+    private func pushCalendar() {
+        guard let pm = petManager else { return }
+        let today = pm.calendarService.todayEvents.map { e -> [String: Any] in
+            ["title": e.title, "startTime": e.startTime, "endTime": e.endTime, "isAllDay": e.isAllDay]
+        }
+        let tomorrow = pm.calendarService.tomorrowEvents.map { e -> [String: Any] in
+            ["title": e.title, "startTime": e.startTime, "endTime": e.endTime, "isAllDay": e.isAllDay]
+        }
+        putJSON(path: "calendar", data: ["today": today, "tomorrow": tomorrow])
     }
 
     // MARK: - 리마인더 동기화

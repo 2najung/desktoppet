@@ -174,6 +174,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
   </div>
 </div>
 
+<!-- 캘린더 -->
+<div class="page" id="pageCalendar">
+  <div class="card">
+    <div class="sec-title">오늘 일정</div>
+    <ul class="list" id="calToday"><li class="empty"><div class="empty-emoji">📅</div>로딩 중...</li></ul>
+  </div>
+  <div class="card">
+    <div class="sec-title">내일 일정</div>
+    <ul class="list" id="calTomorrow"><li class="empty">로딩 중...</li></ul>
+  </div>
+</div>
+
 <!-- 설정 -->
 <div class="page" id="pageSettings">
   <div class="card">
@@ -199,7 +211,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
   <div class="tab active" onclick="showPage('Home')"><div class="tab-icon">🥔</div><div class="tab-label">홈</div></div>
   <div class="tab" onclick="showPage('Todo')"><div class="tab-icon">📋</div><div class="tab-label">할 일</div></div>
   <div class="tab" onclick="showPage('DDay')"><div class="tab-icon">📅</div><div class="tab-label">D-Day</div></div>
-  <div class="tab" onclick="showPage('Settings')"><div class="tab-icon">⚙️</div><div class="tab-label">설정</div></div>
+  <div class="tab" onclick="showPage('Calendar')"><div class="tab-icon">📅</div><div class="tab-label">캘린더</div></div>
 </div>
 
 <!-- Firebase SDK -->
@@ -236,7 +248,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page' + name).classList.add('active');
-  document.querySelectorAll('.tab')[['Home','Todo','DDay','Settings'].indexOf(name)].classList.add('active');
+  document.querySelectorAll('.tab')[['Home','Todo','DDay','Calendar'].indexOf(name)].classList.add('active');
 }
 
 // 토스트
@@ -397,6 +409,23 @@ db.ref('ddays').on('value', snap => {
   });
   el.innerHTML = html;
   badges.innerHTML = badgeHtml;
+});
+
+// 캘린더
+db.ref('calendar').on('value', snap => {
+  const d = snap.val();
+  const todayEl = document.getElementById('calToday');
+  const tmrwEl = document.getElementById('calTomorrow');
+  if (!d) { todayEl.innerHTML = '<li class="empty"><div class="empty-emoji">📅</div>일정 없음</li>'; tmrwEl.innerHTML = '<li class="empty">일정 없음</li>'; return; }
+  const renderList = (items, el, emptyMsg) => {
+    if (!items || items.length === 0) { el.innerHTML = `<li class="empty">${emptyMsg}</li>`; return; }
+    el.innerHTML = items.map(e => {
+      const time = e.isAllDay ? '종일' : e.startTime;
+      return `<li><span style="color:var(--accent);font-weight:700;width:45px;flex-shrink:0">${time}</span><span class="todo-title">${e.title}</span></li>`;
+    }).join('');
+  };
+  renderList(d.today, todayEl, '<div class="empty-emoji">📅</div>오늘 일정 없음');
+  renderList(d.tomorrow, tmrwEl, '내일 일정 없음');
 });
 
 // 리마인더

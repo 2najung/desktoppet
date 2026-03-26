@@ -24,6 +24,7 @@ class PetManager: ObservableObject {
     @Published var clipboardType: String = ""  // translate, summarize, url
     private var lastPBCount: Int = NSPasteboard.general.changeCount
     let weatherService = WeatherService()
+    let calendarService = CalendarService()
 
     private var lastUpdateTime: Date = Date()
     private var timer: Timer?
@@ -357,12 +358,14 @@ class PetManager: ObservableObject {
         let w = weatherService.condition
         let temp = weatherService.temperature
 
-        // 아침 인사
-        event("morning", h, m, 7, 0, 7, 30, [
-            "좋은 아침! 오늘도 화이팅~ ☀️",
-            "일어났어? 좋은 하루 보내! 🌅",
-            "으앙~ 아침이다... 같이 힘내자!",
-        ])
+        // 아침 인사 (캘린더 포함 모닝브리핑)
+        var morningMsgs = ["좋은 아침! ☀️"]
+        let calCount = calendarService.todayEvents.count
+        if calCount > 0 {
+            let first = calendarService.todayEvents.first!
+            morningMsgs = ["좋은 아침! 오늘 일정 \(calCount)개 📅 첫 일정: \(first.displayText)"]
+        }
+        event("morning", h, m, 7, 0, 7, 30, morningMsgs)
 
         // 출근 준비 (날씨 연동)
         var workMsgs = ["출근 시간이야! 준비해~ 🏃", "슬슬 나갈 준비하자!"]
