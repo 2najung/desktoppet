@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DesktopPet">
+<meta name="theme-color" content="#f5f0eb">
+<title>DesktopPet</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+[data-theme="light"]{--bg:#f5f0eb;--card:#fff;--border:rgba(0,0,0,0.06);--shadow:0 2px 12px rgba(0,0,0,0.06);--text:#2d2d2d;--sub:#999;--accent:#6c5ce7;--track:rgba(0,0,0,0.05);--pet-bg:linear-gradient(160deg,#fff5ee,#ffecd2);--tab-bg:#fff;--input-bg:#f0ebe5}
+[data-theme="dark"]{--bg:#0f0f1a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.08);--shadow:none;--text:#f0f0f0;--sub:#666;--accent:#a29bfe;--track:rgba(255,255,255,0.06);--pet-bg:linear-gradient(160deg,rgba(108,92,231,0.15),rgba(0,206,209,0.08));--tab-bg:rgba(255,255,255,0.05);--input-bg:rgba(255,255,255,0.06)}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;padding-bottom:70px;transition:all 0.3s;-webkit-user-select:none;user-select:none}
+.page{display:none;padding:12px;padding-top:calc(env(safe-area-inset-top,8px) + 8px)}
+.page.active{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.pet-card{text-align:center;padding:24px 16px;background:var(--pet-bg);position:relative}
+.pet-emoji{font-size:80px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.pet-name{font-size:20px;font-weight:800;margin-top:12px}
+.pet-mood{font-size:12px;color:var(--sub);margin-top:4px;padding:4px 12px;background:var(--track);border-radius:20px;display:inline-block}
+.pet-weather{font-size:11px;color:var(--sub);margin-top:6px}
+.dday-badges{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.dday-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--accent);color:#fff}
+.dday-badge.urgent{background:#e17055}
+.offline-badge{display:none;font-size:10px;color:#e17055;margin-top:6px}
+.offline-badge.show{display:block}
+
+.info-row{display:flex;align-items:center;gap:12px}
+.level-badge{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;padding:6px 14px;border-radius:20px;font-size:14px;font-weight:800}
+.exp-wrap{flex:1}
+.exp-label{font-size:10px;color:var(--sub);margin-bottom:4px}
+.exp-track{height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.exp-fill{height:100%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);border-radius:3px;transition:width 0.6s}
+
+.stats{display:grid;gap:8px}
+.stat{display:flex;align-items:center;gap:8px}
+.stat-emoji{font-size:15px;width:22px;text-align:center}
+.stat-name{width:38px;font-size:11px;color:var(--sub)}
+.stat-track{flex:1;height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.stat-bar{height:100%;border-radius:3px;transition:width 0.6s}
+.stat-num{width:26px;text-align:right;font-size:11px;font-weight:700}
+
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.act{background:var(--track);border:1px solid var(--border);border-radius:14px;padding:12px 0;text-align:center;cursor:pointer;transition:all 0.12s;-webkit-tap-highlight-color:transparent}
+.act:active{transform:scale(0.88)}
+.act-icon{font-size:24px}
+.act-label{font-size:10px;color:var(--sub);margin-top:3px}
+
+.sec-title{font-size:10px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.add-row{display:flex;gap:8px;margin-bottom:12px}
+.add-input{flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--text);outline:none}
+.add-input:focus{border-color:var(--accent)}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.list{list-style:none}
+.list li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.list li:last-child{border:none}
+.todo-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.todo-check.done{background:#00b894;border-color:#00b894;color:#fff}
+.todo-title{flex:1}
+.todo-title.done{text-decoration:line-through;opacity:0.5}
+.del-btn{color:var(--sub);cursor:pointer;font-size:12px;padding:4px 8px;-webkit-tap-highlight-color:transparent}
+.dday-emoji-sel{font-size:18px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:6px}
+.dday-row{display:flex;align-items:center;gap:8px}
+.dday-text{flex:1}
+.dday-count{font-size:12px;font-weight:800;color:#fff;padding:3px 10px;border-radius:10px;white-space:nowrap}
+
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border:none}
+.setting-label{font-size:14px}
+.setting-sub{font-size:10px;color:var(--sub)}
+.toggle{width:50px;height:28px;border-radius:14px;border:none;background:var(--track);position:relative;cursor:pointer;transition:background 0.3s}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.15);transition:transform 0.3s}
+.toggle.on{background:#6c5ce7}
+.toggle.on::after{transform:translateX(22px)}
+
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--tab-bg);border-top:1px solid var(--border);padding:6px 0 calc(env(safe-area-inset-bottom,6px) + 2px);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:100}
+.tab{flex:1;text-align:center;padding:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s}
+.tab-icon{font-size:20px}
+.tab-label{font-size:9px;color:var(--sub);margin-top:2px}
+.tab.active .tab-label{color:var(--accent);font-weight:700}
+
+.empty{text-align:center;padding:40px 0;color:var(--sub)}
+.empty-emoji{font-size:40px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<!-- 홈 -->
+<div class="page active" id="pageHome">
+  <div class="card pet-card">
+    <div id="ddayBadgesHome" class="dday-badges"></div>
+    <div class="pet-emoji" id="petEmoji">🥔</div>
+    <div class="pet-name" id="petName">로딩 중...</div>
+    <div class="pet-mood" id="petMood"></div>
+    <div class="pet-weather" id="petWeather"></div>
+    <div class="offline-badge" id="offlineBadge">맥 오프라인</div>
+  </div>
+  <div class="card">
+    <div class="info-row">
+      <div class="level-badge" id="petLevel">Lv.1</div>
+      <div class="exp-wrap">
+        <div class="exp-label">경험치</div>
+        <div class="exp-track"><div class="exp-fill" id="petExp" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><span class="stat-emoji">🍚</span><span class="stat-name">배고픔</span><div class="stat-track"><div class="stat-bar" id="bar-hunger" style="width:0%;background:linear-gradient(90deg,#fdcb6e,#e17055)"></div></div><span class="stat-num" id="val-hunger">0</span></div>
+      <div class="stat"><span class="stat-emoji">💗</span><span class="stat-name">기분</span><div class="stat-track"><div class="stat-bar" id="bar-happiness" style="width:0%;background:linear-gradient(90deg,#fd79a8,#e84393)"></div></div><span class="stat-num" id="val-happiness">0</span></div>
+      <div class="stat"><span class="stat-emoji">⚡</span><span class="stat-name">에너지</span><div class="stat-track"><div class="stat-bar" id="bar-energy" style="width:0%;background:linear-gradient(90deg,#ffeaa7,#fdcb6e)"></div></div><span class="stat-num" id="val-energy">0</span></div>
+      <div class="stat"><span class="stat-emoji">🫧</span><span class="stat-name">청결</span><div class="stat-track"><div class="stat-bar" id="bar-cleanliness" style="width:0%;background:linear-gradient(90deg,#81ecec,#00cec9)"></div></div><span class="stat-num" id="val-cleanliness">0</span></div>
+      <div class="stat"><span class="stat-emoji">❤️</span><span class="stat-name">친밀도</span><div class="stat-track"><div class="stat-bar" id="bar-bond" style="width:0%;background:linear-gradient(90deg,#ff7675,#d63031)"></div></div><span class="stat-num" id="val-bond">0</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="actions">
+      <div class="act" onclick="sendCmd('feed')"><div class="act-icon">🍚</div><div class="act-label">밥주기</div></div>
+      <div class="act" onclick="sendCmd('play')"><div class="act-icon">🎾</div><div class="act-label">놀기</div></div>
+      <div class="act" onclick="sendCmd('pet')"><div class="act-icon">✋</div><div class="act-label">쓰다듬기</div></div>
+      <div class="act" onclick="sendCmd('bathe')"><div class="act-icon">🛁</div><div class="act-label">목욕</div></div>
+      <div class="act" onclick="sendCmd('walk')"><div class="act-icon">🏃</div><div class="act-label">산책</div></div>
+      <div class="act" id="sleepBtn" onclick="sendCmd('sleep')"><div class="act-icon">💤</div><div class="act-label">재우기</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 할 일 -->
+<div class="page" id="pageTodo">
+  <div class="card">
+    <div class="sec-title">할 일</div>
+    <div class="add-row">
+      <input class="add-input" id="todoInput" placeholder="새 할 일..." />
+      <button class="add-btn" onclick="addTodo()">추가</button>
+    </div>
+    <ul class="list" id="todoList"><li class="empty"><div class="empty-emoji">📋</div>로딩 중...</li></ul>
+  </div>
+</div>
+
+<!-- D-Day -->
+<div class="page" id="pageDDay">
+  <div class="card">
+    <div class="sec-title">D-Day</div>
+    <div class="add-row" style="flex-wrap:wrap">
+      <select class="dday-emoji-sel" id="ddayEmoji">
+        <option>📌</option><option>🎯</option><option>🎉</option><option>💼</option><option>✈️</option><option>💕</option><option>🎂</option><option>📝</option><option>⏰</option><option>🔥</option>
+      </select>
+      <input class="add-input" id="ddayTitle" placeholder="D-Day 이름" style="min-width:100px" />
+      <input class="add-input" id="ddayDate" type="date" style="width:auto" />
+      <button class="add-btn" onclick="addDDay()">추가</button>
+    </div>
+    <ul class="list" id="ddayList"><li class="empty"><div class="empty-emoji">📅</div>로딩 중...</li></ul>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="page" id="pageSettings">
+  <div class="card">
+    <div class="sec-title">설정</div>
+    <div class="setting-row">
+      <div><div class="setting-label">다크 모드</div><div class="setting-sub">테마 전환</div></div>
+      <button class="toggle" id="themeToggle" onclick="toggleTheme()"></button>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">동기화 상태</div><div class="setting-sub" id="syncStatus">확인 중...</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sec-title">기억</div>
+    <ul class="list" id="memoryList"><li class="empty">로딩 중...</li></ul>
+  </div>
+</div>
+
+<!-- 탭바 -->
+<div class="tab-bar">
+  <div class="tab active" onclick="showPage('Home')"><div class="tab-icon">🥔</div><div class="tab-label">홈</div></div>
+  <div class="tab" onclick="showPage('Todo')"><div class="tab-icon">📋</div><div class="tab-label">할 일</div></div>
+  <div class="tab" onclick="showPage('DDay')"><div class="tab-icon">📅</div><div class="tab-label">D-Day</div></div>
+  <div class="tab" onclick="showPage('Settings')"><div class="tab-icon">⚙️</div><div class="tab-label">설정</div></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyATUb1--YupKZvpWzXwiCUxp07JTot9M3Y",
+  authDomain: "desktoppet-ba9ae.firebaseapp.com",
+  databaseURL: "https://desktoppet-ba9ae-default-rtdb.firebaseio.com",
+  projectId: "desktoppet-ba9ae",
+  storageBucket: "desktoppet-ba9ae.firebasestorage.app",
+  messagingSenderId: "55301502574",
+  appId: "1:55301502574:web:75d2de7e4026fbc40a187f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 테마
+const saved = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', saved);
+if (saved === 'dark') document.getElementById('themeToggle')?.classList.add('on');
+
+function toggleTheme() {
+  const c = document.documentElement.getAttribute('data-theme');
+  const n = c === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', n);
+  localStorage.setItem('theme', n);
+  document.getElementById('themeToggle').classList.toggle('on');
+}
+
+// 페이지 전환
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page' + name).classList.add('active');
+  document.querySelectorAll('.tab')[['Home','Todo','DDay','Settings'].indexOf(name)].classList.add('active');
+}
+
+// 명령 보내기 (맥 앱이 처리)
+function sendCmd(type, data = {}) {
+  const cmd = { type, ...data, timestamp: Date.now() };
+  db.ref('commands').push(cmd);
+  if (navigator.vibrate) navigator.vibrate(20);
+  // 슬립 버튼 토글
+  if (type === 'sleep') {
+    document.getElementById('sleepBtn').innerHTML = '<div class="act-icon">⏰</div><div class="act-label">깨우기</div>';
+    document.getElementById('sleepBtn').onclick = () => sendCmd('wake');
+  } else if (type === 'wake') {
+    document.getElementById('sleepBtn').innerHTML = '<div class="act-icon">💤</div><div class="act-label">재우기</div>';
+    document.getElementById('sleepBtn').onclick = () => sendCmd('sleep');
+  }
+}
+
+// 할 일 추가
+function addTodo() {
+  const inp = document.getElementById('todoInput');
+  const v = inp.value.trim();
+  if (!v) return;
+  inp.value = '';
+  sendCmd('addTodo', { title: v });
+}
+document.getElementById('todoInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) addTodo();
+});
+
+// D-Day 추가
+function addDDay() {
+  const title = document.getElementById('ddayTitle').value.trim();
+  const date = document.getElementById('ddayDate').value;
+  const emoji = document.getElementById('ddayEmoji').value;
+  if (!title || !date) return;
+  document.getElementById('ddayTitle').value = '';
+  sendCmd('addDDay', { title, date, emoji });
+}
+
+// D-Day 계산
+function calcDDay(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  const diff = Math.round((target - today) / 86400000);
+  if (diff > 0) return 'D-' + diff;
+  if (diff === 0) return 'D-DAY!';
+  return 'D+' + Math.abs(diff);
+}
+
+// === Firebase 실시간 리스너 ===
+
+// 펫 상태
+db.ref('pet').on('value', snap => {
+  const d = snap.val();
+  if (!d) { document.getElementById('offlineBadge').classList.add('show'); return; }
+  document.getElementById('offlineBadge').classList.remove('show');
+  document.getElementById('petEmoji').textContent = d.emoji || '🥔';
+  document.getElementById('petName').textContent = d.name || '펫';
+  document.getElementById('petMood').textContent = (d.emoji||'') + ' ' + (d.label||'');
+  document.getElementById('petLevel').textContent = 'Lv.' + (d.level||1);
+  document.getElementById('petExp').style.width = (d.expNext > 0 ? d.exp / d.expNext * 100 : 0) + '%';
+  document.getElementById('petWeather').textContent = d.weather || '';
+  ['hunger','happiness','energy','cleanliness','bond'].forEach(k => {
+    const el = document.getElementById('bar-' + k);
+    const vl = document.getElementById('val-' + k);
+    if (el) el.style.width = (d[k]||0) + '%';
+    if (vl) vl.textContent = d[k]||0;
+  });
+  const sb = document.getElementById('sleepBtn');
+  if (d.sleeping) { sb.innerHTML = '<div class="act-icon">⏰</div><div class="act-label">깨우기</div>'; sb.onclick = () => sendCmd('wake'); }
+  else { sb.innerHTML = '<div class="act-icon">💤</div><div class="act-label">재우기</div>'; sb.onclick = () => sendCmd('sleep'); }
+  // 동기화 상태
+  document.getElementById('syncStatus').textContent = '마지막 동기화: ' + new Date(d.lastUpdate).toLocaleTimeString('ko-KR');
+});
+
+// 할 일
+db.ref('todos').on('value', snap => {
+  const items = snap.val() || [];
+  const el = document.getElementById('todoList');
+  if (!items.length) { el.innerHTML = '<li class="empty"><div class="empty-emoji">📋</div>할 일 없음</li>'; return; }
+  const pending = items.filter(i => !i.isDone);
+  const done = items.filter(i => i.isDone);
+  let html = '';
+  pending.forEach(i => {
+    html += `<li><div class="todo-check" onclick="sendCmd('toggleTodo',{id:'${i.id}'})">&nbsp;</div><span class="todo-title">${i.title}</span><span class="del-btn" onclick="sendCmd('deleteTodo',{id:'${i.id}'})">✕</span></li>`;
+  });
+  if (done.length) {
+    html += '<li style="color:var(--sub);font-size:10px;border:none;padding:4px 0">완료됨</li>';
+    done.forEach(i => {
+      html += `<li><div class="todo-check done" onclick="sendCmd('toggleTodo',{id:'${i.id}'})">✓</div><span class="todo-title done">${i.title}</span><span class="del-btn" onclick="sendCmd('deleteTodo',{id:'${i.id}'})">✕</span></li>`;
+    });
+  }
+  el.innerHTML = html;
+});
+
+// D-Day
+db.ref('ddays').on('value', snap => {
+  const items = snap.val() || [];
+  const el = document.getElementById('ddayList');
+  const badges = document.getElementById('ddayBadgesHome');
+  if (!items.length) { el.innerHTML = '<li class="empty"><div class="empty-emoji">📅</div>D-Day 없음</li>'; badges.innerHTML = ''; return; }
+  let html = '';
+  let badgeHtml = '';
+  items.forEach(i => {
+    const dd = calcDDay(i.date);
+    const isUrgent = dd === 'D-DAY!' || dd === 'D-1' || dd === 'D-2' || dd === 'D-3';
+    const color = dd === 'D-DAY!' ? '#e17055' : (isUrgent ? '#fdcb6e' : 'var(--accent)');
+    html += `<li class="dday-row"><span style="font-size:18px">${i.emoji}</span><span class="dday-text">${i.title}</span><span class="dday-count" style="background:${color}">${dd}</span><span class="del-btn" onclick="sendCmd('deleteDDay',{id:'${i.id}'})">✕</span></li>`;
+    badgeHtml += `<span class="dday-badge ${isUrgent?'urgent':''}">${i.emoji} ${i.title} ${dd}</span>`;
+  });
+  el.innerHTML = html;
+  badges.innerHTML = badgeHtml;
+});
+
+// 기억
+db.ref('memories').on('value', snap => {
+  const items = snap.val() || [];
+  const el = document.getElementById('memoryList');
+  if (!items.length) { el.innerHTML = '<li class="empty">저장된 기억 없음</li>'; return; }
+  el.innerHTML = items.map(m => `<li>💾 ${m}</li>`).join('');
+});
+</script>
+</body>
+</html>
