@@ -179,6 +179,7 @@ class PetManager: ObservableObject {
             if now >= target {
                 showTimeMessage("⏰ \(msg)")
                 NSSound.beep()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSSound.beep() }
                 fired.append(id)
             }
         }
@@ -335,7 +336,7 @@ class PetManager: ObservableObject {
 
     func showTimeMessage(_ text: String) {
         timeMessage = text
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) { [weak self] in
             if self?.timeMessage == text { self?.timeMessage = nil }
         }
     }
