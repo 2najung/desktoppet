@@ -81,8 +81,13 @@ struct QuickCommandView: View {
 
     func send() {
         let text = inputText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty, !isLoading else { return }
+        guard !text.isEmpty, !isLoading else {
+            print("QuickCommand: 빈 텍스트 또는 로딩 중")
+            return
+        }
 
+        print("QuickCommand: 전송 시작 - \(text)")
+        print("QuickCommand: API키 있음? \(groq.hasAPIKey)")
         isLoading = true
         resultText = nil
         petManager.isSecretaryMode = true
@@ -92,15 +97,19 @@ struct QuickCommandView: View {
         Task {
             do {
                 groq.loadHistory(from: chatStore.secretaryMessages)
+                print("QuickCommand: Groq 호출 시작")
                 let reply = try await groq.chatStream(message: text, systemPrompt: buildPrompt())
+                print("QuickCommand: 응답 받음 - \(reply.prefix(50))")
                 let cleanReply = processActions(reply)
                 groq.updateLastReply(cleanReply)
-                chatStore.addSecretaryMessage(role: "assistant", content: cleanReply)
-                resultText = cleanReply
+                let displayText = cleanReply.isEmpty ? "✅ 완료!" : cleanReply
+                chatStore.addSecretaryMessage(role: "assistant", content: displayText)
+                resultText = displayText
                 isLoading = false
             } catch {
                 resultText = "⚠️ \(error.localizedDescription)"
                 isLoading = false
+                print("QuickCommand 에러: \(error)")
             }
         }
     }

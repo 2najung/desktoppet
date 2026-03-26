@@ -201,7 +201,8 @@ struct ChatView: View {
                     let reply = try await groq.chatStream(message: text, systemPrompt: secretaryPrompt())
                     let cleanReply = processActions(reply)
                     groq.updateLastReply(cleanReply)
-                    chatStore.addSecretaryMessage(role: "assistant", content: cleanReply)
+                    let displayText = cleanReply.isEmpty ? "✅ 완료!" : cleanReply
+                    chatStore.addSecretaryMessage(role: "assistant", content: displayText)
                 } else {
                     let reply = try await ollama.chat(
                         message: text,

@@ -182,9 +182,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         quickCommandWindow.collectionBehavior = [.canJoinAllSpaces, .stationary]
         quickCommandWindow.contentView = NSHostingView(rootView: contentView)
 
-        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: quickCommandWindow, queue: .main) { [weak self] _ in
-            self?.quickCommandWindow.orderOut(nil)
-        }
+        // 포커스 잃어도 바로 닫지 않음 (Escape로만 닫기)
     }
 
     func toggleQuickCommand() {
