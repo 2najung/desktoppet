@@ -13,9 +13,12 @@
 [data-theme="light"]{--bg:#f5f0eb;--card:#fff;--border:rgba(0,0,0,0.06);--shadow:0 2px 12px rgba(0,0,0,0.06);--text:#2d2d2d;--sub:#999;--accent:#6c5ce7;--track:rgba(0,0,0,0.05);--pet-bg:linear-gradient(160deg,#fff5ee,#ffecd2);--tab-bg:#fff;--input-bg:#f0ebe5}
 [data-theme="dark"]{--bg:#0f0f1a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.08);--shadow:none;--text:#f0f0f0;--sub:#666;--accent:#a29bfe;--track:rgba(255,255,255,0.06);--pet-bg:linear-gradient(160deg,rgba(108,92,231,0.15),rgba(0,206,209,0.08));--tab-bg:rgba(255,255,255,0.05);--input-bg:rgba(255,255,255,0.06)}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;padding-bottom:70px;transition:all 0.3s;-webkit-user-select:none;user-select:none}
+.wrap{max-width:420px;margin:0 auto}
 .page{display:none;padding:12px;padding-top:calc(env(safe-area-inset-top,8px) + 8px)}
 .page.active{display:block}
-
+.pet-action{font-size:13px;font-weight:700;color:#e17055;min-height:20px;margin-top:6px;transition:opacity 0.3s}
+.toast{position:fixed;top:env(safe-area-inset-top,20px);left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
 .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
 .pet-card{text-align:center;padding:24px 16px;background:var(--pet-bg);position:relative}
 .pet-img{width:140px;height:140px;object-fit:contain;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.12))}
@@ -89,6 +92,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 </style>
 </head>
 <body>
+<div id="toast" class="toast"></div>
+<div class="wrap">
 
 <!-- 홈 -->
 <div class="page active" id="pageHome">
@@ -99,6 +104,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
     <div class="pet-name" id="petName">로딩 중...</div>
     <div class="pet-mood" id="petMood"></div>
     <div class="pet-weather" id="petWeather"></div>
+    <div class="pet-action" id="petAction"></div>
     <div class="offline-badge" id="offlineBadge">맥 오프라인</div>
   </div>
   <div class="card">
@@ -177,6 +183,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
   </div>
 </div>
 
+</div><!-- wrap -->
+
 <!-- 탭바 -->
 <div class="tab-bar">
   <div class="tab active" onclick="showPage('Home')"><div class="tab-icon">🥔</div><div class="tab-label">홈</div></div>
@@ -222,11 +230,55 @@ function showPage(name) {
   document.querySelectorAll('.tab')[['Home','Todo','DDay','Settings'].indexOf(name)].classList.add('active');
 }
 
+// 토스트
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// 액션 텍스트
+function showAction(msg) {
+  const el = document.getElementById('petAction');
+  el.textContent = msg;
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+}
+
+// 임시 스탯 업데이트 (즉각 반응)
+function optimisticUpdate(type) {
+  const labels = {feed:'🍚 밥 줬어!',play:'🎾 놀아줬어!',pet:'✋ 쓰다듬었어!',bathe:'🛁 목욕시켰어!',walk:'🏃 산책!',sleep:'💤 재웠어!',wake:'⏰ 깨웠어!'};
+  const statChanges = {
+    feed: {hunger:25,happiness:5},
+    play: {happiness:20,energy:-10},
+    pet: {happiness:10},
+    bathe: {cleanliness:30,happiness:5},
+    walk: {happiness:15,energy:-15}
+  };
+  if (labels[type]) showAction(labels[type]);
+  const changes = statChanges[type];
+  if (changes) {
+    ['hunger','happiness','energy','cleanliness','bond'].forEach(k => {
+      if (changes[k]) {
+        const el = document.getElementById('bar-' + k);
+        const vl = document.getElementById('val-' + k);
+        const cur = parseInt(vl.textContent) || 0;
+        const nv = Math.max(0, Math.min(100, cur + changes[k]));
+        el.style.width = nv + '%';
+        vl.textContent = nv;
+      }
+    });
+  }
+}
+
 // 명령 보내기 (맥 앱이 처리)
 function sendCmd(type, data = {}) {
   const cmd = { type, ...data, timestamp: Date.now() };
   db.ref('commands').push(cmd);
   if (navigator.vibrate) navigator.vibrate(20);
+  // 즉각 피드백
+  const actionLabels = {feed:'🍚 밥 줬어!',play:'🎾 놀았어!',pet:'✋ 쓰다듬었어!',bathe:'🛁 목욕시켰어!',walk:'🏃 산책!',sleep:'💤 재웠어!',wake:'⏰ 깨웠어!',addTodo:'📋 추가했어!',addDDay:'📅 추가했어!',deleteTodo:'🗑 삭제했어!',deleteDDay:'🗑 삭제했어!',toggleTodo:'✅ 완료!'};
+  if (actionLabels[type]) showToast(actionLabels[type]);
+  optimisticUpdate(type);
   // 슬립 버튼 토글
   if (type === 'sleep') {
     document.getElementById('sleepBtn').innerHTML = '<div class="act-icon">⏰</div><div class="act-label">깨우기</div>';
