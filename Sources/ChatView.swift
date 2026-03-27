@@ -356,13 +356,16 @@ struct ChatView: View {
         let memories = ActionExecutor.loadMemories()
         let memoryContext = memories.isEmpty ? "저장된 기억 없음" : "저장된 기억:\n\(memories.suffix(10).map { "- \($0)" }.joined(separator: "\n"))"
         let calendarContext = petManager.calendarService.todaySummary
+        let weatherInfo = petManager.weatherService.description
 
         return """
         너는 '\(petManager.name)'이라는 이름의 똑똑한 AI 비서야.
         사용자의 질문에 정확하고 도움이 되는 답변을 해.
         항상 한국어로 대답해. 반말로 친근하게 답해줘.
+        너는 이미 현재 날씨, 일정, 할 일 정보를 알고 있어. 날씨나 일정 질문에는 태그 없이 바로 답해.
 
         현재 시간: \(now)
+        현재 날씨: \(weatherInfo)
 
         \(todoContext)
 
